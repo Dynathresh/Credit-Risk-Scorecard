@@ -6,7 +6,7 @@ import math
 
 
 def main():
-    print(os.listdir("input/"))
+    print(os.listdir('input'))
 
     # 0-Repaid; 1-Defaulted
     app_train = pd.read_csv('input/application_train.csv')
