@@ -3,7 +3,6 @@ from typing import Dict, Any, Union
 import pandas as pd
 import numpy as np
 import math
-# import statsmodels.api as sm
 
 def main():
     print(os.listdir('input'))
@@ -12,8 +11,8 @@ def main():
     app_train = pd.read_csv('input/application_train.csv')
     print('Training data shape: ', app_train.shape)
 
-    print(type(app_train['TARGET']))
-    print(type(app_train))
+    # print(type(app_train['TARGET']))
+    # print(type(app_train))
     chosen_feature = input('Choose feature:')
 
     # Feature-Target-Data-Frame
@@ -28,17 +27,17 @@ def main():
 
     # Greater negative correlation == less likely to default as value (age) increases
     print('Pearson correlation coefficient of {0} with TARGET: {1}'.format(chosen_feature, ftdf['FEATURE'].corr(app_train['TARGET'])))
-    calculate_woe(ftdf)
+    display_woe(ftdf)
 
 
-def convert_age(app_train_DAYS_BIRTH):
+def convert_age(app_train_DAYS_BIRTH):  # Improves scorecard human-readability
     app_train_DAYS_BIRTH = abs(app_train_DAYS_BIRTH)  # Division results in float by default
     age_dataframe = pd.DataFrame()
     age_dataframe['FEATURE'] = app_train_DAYS_BIRTH/365
     return age_dataframe
 
 
-def calculate_woe(ftdf):
+def display_woe(ftdf):
     ftdf = ftdf.sort_values(by=['FEATURE'])
     value_counts = ftdf['TARGET'].value_counts()
     # print(value_counts)
@@ -62,8 +61,8 @@ def calculate_woe(ftdf):
         wd: Dict[str, Union[Union[str, float], Any]] = {}
         # print('Rows: ' + str(my_bin.shape[0]/app_train.shape[0]))  # % of all rows in this bin
 
-        bin_min = my_bin['FEATURE'].min()  # Min bin
-        bin_max = my_bin['FEATURE'].max()  # Max bin
+        bin_min = my_bin['FEATURE'].min()  # Min value in bin
+        bin_max = my_bin['FEATURE'].max()  # Max value in bin
         wd['RANGE'] = str(round(bin_min, 2)) + '-' + str(round(bin_max, 2))
         bin_value_counts = (my_bin['TARGET']).value_counts()
         wd['NON_EVENTS'] = (bin_value_counts[0])  # Non-Events in this bin
@@ -87,7 +86,6 @@ def calculate_woe(ftdf):
     print(woe_df.head(11))
     # TODO Resolve null bin
     # print(null_bin.head())
-
 
 if __name__ == '__main__':
     main()
