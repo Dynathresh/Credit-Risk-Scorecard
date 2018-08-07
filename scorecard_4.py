@@ -14,51 +14,14 @@ def main():
     y = app_train[target]
 
     # .copy() -> deep copy the dataframe to preserve original data, just for insurance.
-    # get_woe_numerical_dict(my_data.copy(), target)
-    data_woe_numerical_dict = get_woe_numerical_dict(train_data.copy(), target)  # {characteristic: {(min,max):(woe,IV)}}
+    # data_to_woe_numerical(my_data.copy(), target)
+    data_woe_numerical_dict = data_to_woe_numerical(train_data.copy(), target)  # {characteristic: {(min,max):(woe,IV)}}
 
-    # data_replaced_with_woe = app_train[feature_list].copy()  # Copy of dataframe, minus target column
-    data_replaced_with_woe = replace_with_woe(app_train[feature_list].copy(), data_woe_numerical_dict)
+    data_replaced_with_woe = app_train[feature_list].copy()  # Copy of dataframe, minus target column
 
-    X = data_replaced_with_woe
-    lr = lm.LogisticRegression()
-    lr.fit(X, y)
-    print(lr.coef_)
-    print(lr.intercept_)
-    coef_list = lr.coef_[0]
-    intercept = lr.intercept_[0]
-
-    scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict)
-
-
-def scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict):
-    app_train = pd.read_csv('input/application_test.csv')  # Read in testing data
-    test_data = app_train[feature_list]
-
-    test_data_woe = replace_with_woe(test_data, data_woe_numerical_dict)  # Returns dataframe of data replaced with WOE
-
-    n = len(feature_list)  # Number of features
-    a = intercept
-    factor = 1
-    offset = 1
-
-    score_list = []
-
-    for index, row in test_data_woe.iterrows():
-        for j in range(len(row)):
-            score = -((row[j] * coef_list[j]) + (a/n)) * factor + (offset/n)
-            score_list.append(score)
-
-    score_file = open('test.txt', 'w')
-    for item in score_list:
-        score_file.write("%s\n" % item)
-    # print(score_list)  # takes forever
-
-
-def replace_with_woe(og_data, data_woe_numerical_dict):
     # Cast all feature values to float so the woe values that replace them remain as floats
     # Otherwise all the woe values get rounded to 0
-    data_replaced_with_woe = og_data.astype(np.float64)
+    data_replaced_with_woe = data_replaced_with_woe.astype(np.float64)
 
     for feature in data_replaced_with_woe:
         woe_dict = data_woe_numerical_dict[feature]
@@ -68,10 +31,35 @@ def replace_with_woe(og_data, data_woe_numerical_dict):
                 if key[0] <= x < key[1]:
                     data_replaced_with_woe.at[i, feature] = woe_dict[key][0]  # Changes value into woe
                     break
-    return data_replaced_with_woe
+    print(data_replaced_with_woe)
+
+    X = data_replaced_with_woe
+    lr = lm.LogisticRegression()
+    lr.fit(X, y)
+    print(lr.coef_)
+    print(lr.intercept_)
+
+    for c in lr.coef_[0]:
+        print(c)
+
+    scorecard_test(lr.coef_[0], lr.intercept_, feature_list)
 
 
-def get_woe_numerical_dict(data, target):
+def scorecard_test(coef_list, intercept, feature_list):
+    app_train = pd.read_csv('input/application_train.csv')  # Read in testing data
+    test_data = app_train[feature_list]
+
+    n = len(feature_list)  # Number of features
+    a = intercept
+    factor = 1
+    offset = 1
+
+    for row in test_data:
+        for i in range(n):
+            -((woe_j * coefficient) + (a/n)) * factor + (offset/n)
+
+
+def data_to_woe_numerical(data, target):
     #  instantiate WOE dictionary, with type hints
     woe_dict: Dict[Any, Dict[Tuple[Union[float, Any], Union[float, Any]], Tuple[float, Union[float, Any]]]] = {}
     print(type(data))
