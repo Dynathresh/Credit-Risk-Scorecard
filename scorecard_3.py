@@ -32,27 +32,28 @@ def main():
 
 
 def scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict):
-    app_train = pd.read_csv('input/application_test.csv')  # Read in testing data
+    app_train = pd.read_csv('input/application_train.csv')  # Read in testing data
     test_data = app_train[feature_list]
 
     test_data_woe = replace_with_woe(test_data, data_woe_numerical_dict)  # Returns dataframe of data replaced with WOE
 
     n = len(feature_list)  # Number of features
     a = intercept
-    factor = 1
-    offset = 1
+    factor = 28.8539
+    offset = 100
 
     score_list = []
 
-    for index, row in test_data_woe.iterrows():
+    for index, row in test_data_woe.iterrows():  # Iterate over rows
+        sum_score = 0
         for j in range(len(row)):
-            score = -((row[j] * coef_list[j]) + (a/n)) * factor + (offset/n)
-            score_list.append(score)
+            sub_score = -((row[j] * coef_list[j]) + (a/n)) * factor + (offset/n)
+            sum_score += sub_score
+        score_list.append(sum_score)
 
-    score_file = open('test.txt', 'w')
+    score_file = open('score_output.txt', 'w')
     for item in score_list:
         score_file.write("%s\n" % item)
-    # print(score_list)  # takes forever
 
 
 def replace_with_woe(og_data, data_woe_numerical_dict):
@@ -125,17 +126,6 @@ def get_woe_numerical_dict(data, target):
     #     print("{0}, {1}".format(key, woe_dict['DAYS_BIRTH'][key][0]))
 
     return woe_dict
-
-
-
-# class RangeDict(dict):  # https://stackoverflow.com/a/39358140/9907619
-#     def __getitem__(self, item):
-#         if type(item) != range:
-#             for key in self:
-#                 return self[key]
-#         else:
-#             return super().__getitem__(item）
-
 
 
 if __name__ == '__main__':
