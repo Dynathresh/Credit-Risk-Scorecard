@@ -1,4 +1,3 @@
-import os
 from typing import Dict, Any, Union, Tuple
 import pandas as pd
 import numpy as np
@@ -11,6 +10,7 @@ def main():
     app_train = pd.read_csv('input/application_train.csv')  # 把training data变成dataframe
     # TODO algorithmically选最好的特徵
     feature_list = ['DAYS_BIRTH', 'DAYS_EMPLOYED', 'AMT_INCOME_TOTAL']  # 特征list
+                        # feature_list_categorical = ['NAME_INCOME_TYPE']
     target = 'TARGET'  # 目标柱名字
     train_data = app_train[feature_list]  # 把想用的数据提取到自己的dataframe
     train_data = train_data.join(app_train[target])  # 把目标柱加到dataframe里
@@ -22,16 +22,18 @@ def main():
     # 把数据的原始数字变成woe
     data_replaced_with_woe = replace_with_woe(app_train[feature_list].copy(), data_woe_numerical_dict)
 
-    X = data_replaced_with_woe
-    y = app_train[target]  # 用这个目标柱做逻辑回归
-    lr = lm.LogisticRegression()  # 开始做逻辑回归模型
-    lr.fit(X, y)  # 把数据和目标加到模型里
-    print(lr.coef_)
-    print(lr.intercept_)
-    coef_list = lr.coef_[0]  # 系数list
-    intercept = lr.intercept_[0]  # 截距
+    log_reg_values = logistic_regression(data_replaced_with_woe, app_train[target])
+                        # log_reg_values_categorical = logistic_regression(app_train[feature_list_categorical], app_train[target])
+
+    coef_list = log_reg_values[0]  # 系数list
+    intercept = log_reg_values[1]  # 截距
+                        # coef_list_categorical = log_reg_values_categorical[0]
+                        # intercept_categorical = log_reg_values_categorical[1]
 
     scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict)  # 测试模型
+                        # scorecard_test(coef_list_categorical, intercept_categorical, feature_list_categorical, data_woe_numerical_dict)
+
+    # /main
 
 
 def scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict):
@@ -42,8 +44,8 @@ def scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict):
 
     n = len(feature_list)  # 几个特徵
     a = intercept  # 截距
-    factor = 28.8539
-    offset = 100
+    factor = 1
+    offset = 0
 
     score_list = []  # 分数list
 
@@ -58,6 +60,20 @@ def scorecard_test(coef_list, intercept, feature_list, data_woe_numerical_dict):
     score_file = open('score_output.txt', 'w')
     for item in score_list:
         score_file.write("%s\n" % item)
+
+
+def logistic_regression(data_replaced_with_woe, target_column):
+    X = data_replaced_with_woe
+    y = target_column  # 用这个目标柱做逻辑回归
+    lr = lm.LogisticRegression()  # 开始做逻辑回归模型
+    lr.fit(X, y)  # 把数据和目标加到模型里
+    print(lr.coef_)
+    print(lr.intercept_)
+    coef_list = lr.coef_[0]  # 系数list
+    intercept = lr.intercept_[0]  # 截距
+    # print("%%%%%%%%%%%%")
+    # print(lm.predict(X))
+    return [coef_list, intercept]
 
 
 def replace_with_woe(og_data, data_woe_numerical_dict):
@@ -95,6 +111,7 @@ def get_woe_numerical_dict(data, target):
         bin_num = 0
         smallest_min = single_feature_df[feature].min()  # 这个特徵最小的value
         largest_max = single_feature_df[feature].max()  # 这个特徵最大的value
+        IV_total = 0
         for my_bin in bins:
             bin_num += 1
 
@@ -119,10 +136,15 @@ def get_woe_numerical_dict(data, target):
             percent_events = events / total_events  # events百分之多少在这个bin
             woe = math.log(percent_non_events / percent_events)  # 算woe
             IV = (percent_non_events - percent_events) * woe  # 算IV
-
+            IV_total += IV
             bin_dict[(bin_min, bin_max)] = (woe, IV)  # 把这个bin的minimum,maximum,woe,和IV存到dictionary里
 
+            print(feature)
+            print("{0}{1}=({2},{3})".format(bin_min, bin_max, woe, IV))
+        print("{0} IV--------: {1}".format(feature, IV_total))
+
         woe_dict[feature] = bin_dict
+
     return woe_dict
 
 
