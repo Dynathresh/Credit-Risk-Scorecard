@@ -5,6 +5,7 @@ app_train = pd.read_csv('input/application_train.csv')  # 把training data变成
 
 # Find correlations with the target and sort
 correlations = app_train.corr()['TARGET'].sort_values()
+# correlations.reindex(correlations.TARGET.abs().sort_values().index)
 
 # Display correlations
 print('Most Positive Correlations:\n', correlations.tail(15))
